@@ -1,0 +1,335 @@
+{
+    "typeDiscriminator": "ContributionToJournal",
+    "pureId": 213783086,
+    "uuid": "443897c3-a02e-442d-8d18-ee3e03ebb0ff",
+    "createdBy": "jhe380@vu.nl",
+    "createdDate": "2023-02-09T16:16:42.882+01:00",
+    "modifiedBy": "rdm200@vu.nl",
+    "modifiedDate": "2025-06-11T10:42:43.898+02:00",
+    "portalUrl": "https://vu-staging.pure.elsevier.com/en/publications/443897c3-a02e-442d-8d18-ee3e03ebb0ff",
+    "prettyUrlIdentifiers": [
+        "aggressive-incidents-by-incarcerated-people-with-psychiatric-illn"
+    ],
+    "version": "389dfd0cf5efa6e6036103d0fbe8964573b0e538",
+    "title": {
+        "value": "Aggressive Incidents by Incarcerated People With Psychiatric Illness and Their Relationship With Psychiatric Symptoms"
+    },
+    "type": {
+        "uri": "/dk/atira/pure/researchoutput/researchoutputtypes/contributiontojournal/article",
+        "term": {
+            "en_GB": "Article"
+        }
+    },
+    "category": {
+        "uri": "/dk/atira/pure/researchoutput/category/academic",
+        "term": {
+            "en_GB": "Academic"
+        }
+    },
+    "peerReview": true,
+    "publicationStatuses": [
+        {
+            "pureId": 318381657,
+            "current": false,
+            "publicationStatus": {
+                "uri": "/dk/atira/pure/researchoutput/status/epub",
+                "term": {
+                    "en_GB": "E-pub ahead of print"
+                }
+            },
+            "publicationDate": {
+                "year": 2023,
+                "month": 2,
+                "day": 4
+            }
+        },
+        {
+            "pureId": 213783107,
+            "current": true,
+            "publicationStatus": {
+                "uri": "/dk/atira/pure/researchoutput/status/published",
+                "term": {
+                    "en_GB": "Published"
+                }
+            },
+            "publicationDate": {
+                "year": 2023
+            }
+        }
+    ],
+    "language": {
+        "uri": "/dk/atira/pure/core/languages/en_GB",
+        "term": {
+            "en_GB": "English"
+        }
+    },
+    "contributors": [
+        {
+            "typeDiscriminator": "InternalContributorAssociation",
+            "pureId": 318381665,
+            "externalOrganizations": [
+                {
+                    "systemName": "ExternalOrganization",
+                    "uuid": "84b22d43-a9be-4036-ab4f-6ee657977985"
+                }
+            ],
+            "hidden": false,
+            "correspondingAuthor": true,
+            "name": {
+                "firstName": "Janneke",
+                "lastName": "Van Beek"
+            },
+            "role": {
+                "uri": "/dk/atira/pure/researchoutput/roles/contributiontojournal/author",
+                "term": {
+                    "en_GB": "Author"
+                }
+            },
+            "person": {
+                "systemName": "Person",
+                "uuid": "e1c6b0d5-ee74-44e5-bcf4-5d3e9eca735c"
+            }
+        },
+        {
+            "typeDiscriminator": "InternalContributorAssociation",
+            "pureId": 318381666,
+            "externalOrganizations": [
+                {
+                    "systemName": "ExternalOrganization",
+                    "uuid": "36e4f311-d01d-4647-97ac-76c3be3c93d3"
+                },
+                {
+                    "systemName": "ExternalOrganization",
+                    "uuid": "4c93f171-8f27-4c8e-a773-8dcec6bbfc4f"
+                }
+            ],
+            "hidden": false,
+            "correspondingAuthor": false,
+            "name": {
+                "firstName": "Jesse",
+                "lastName": "Meijers"
+            },
+            "role": {
+                "uri": "/dk/atira/pure/researchoutput/roles/contributiontojournal/author",
+                "term": {
+                    "en_GB": "Author"
+                }
+            },
+            "person": {
+                "systemName": "Person",
+                "uuid": "9124e0d5-7014-411c-ac39-613a236092d6"
+            }
+        },
+        {
+            "typeDiscriminator": "InternalContributorAssociation",
+            "pureId": 318381667,
+            "hidden": false,
+            "correspondingAuthor": false,
+            "name": {
+                "firstName": "Erik J. A.",
+                "lastName": "Scherder"
+            },
+            "role": {
+                "uri": "/dk/atira/pure/researchoutput/roles/contributiontojournal/author",
+                "term": {
+                    "en_GB": "Author"
+                }
+            },
+            "person": {
+                "systemName": "Person",
+                "uuid": "4c85bbc0-f2c7-46cf-b144-211784551892"
+            },
+            "organizations": [
+                {
+                    "systemName": "Organization",
+                    "uuid": "308d4529-743d-4315-bdb1-a6466a6cb8c5"
+                },
+                {
+                    "systemName": "Organization",
+                    "uuid": "55a898dc-0004-48d9-9502-15f4ab2bb6b3"
+                },
+                {
+                    "systemName": "Organization",
+                    "uuid": "0540645f-7df4-492e-b515-6cb126668d76"
+                },
+                {
+                    "systemName": "Organization",
+                    "uuid": "780b42e5-a17d-44b7-892a-6a053141f71e"
+                }
+            ]
+        },
+        {
+            "typeDiscriminator": "InternalContributorAssociation",
+            "pureId": 318381672,
+            "hidden": false,
+            "correspondingAuthor": false,
+            "name": {
+                "firstName": "Joke M.",
+                "lastName": "Harte"
+            },
+            "role": {
+                "uri": "/dk/atira/pure/researchoutput/roles/contributiontojournal/author",
+                "term": {
+                    "en_GB": "Author"
+                }
+            },
+            "person": {
+                "systemName": "Person",
+                "uuid": "16e1ea92-cfbb-4c1d-a191-7928f7078081"
+            },
+            "organizations": [
+                {
+                    "systemName": "Organization",
+                    "uuid": "ccabbdd2-7c91-4fbc-9aba-02460d81eedb"
+                },
+                {
+                    "systemName": "Organization",
+                    "uuid": "157c6ece-8f5f-4910-ba79-0278cd61fa05"
+                },
+                {
+                    "systemName": "Organization",
+                    "uuid": "a5cdf03b-57da-4049-9980-b5fd52d86a5a"
+                }
+            ]
+        }
+    ],
+    "organizations": [
+        {
+            "systemName": "Organization",
+            "uuid": "308d4529-743d-4315-bdb1-a6466a6cb8c5"
+        },
+        {
+            "systemName": "Organization",
+            "uuid": "55a898dc-0004-48d9-9502-15f4ab2bb6b3"
+        },
+        {
+            "systemName": "Organization",
+            "uuid": "0540645f-7df4-492e-b515-6cb126668d76"
+        },
+        {
+            "systemName": "Organization",
+            "uuid": "780b42e5-a17d-44b7-892a-6a053141f71e"
+        },
+        {
+            "systemName": "Organization",
+            "uuid": "ccabbdd2-7c91-4fbc-9aba-02460d81eedb"
+        },
+        {
+            "systemName": "Organization",
+            "uuid": "157c6ece-8f5f-4910-ba79-0278cd61fa05"
+        },
+        {
+            "systemName": "Organization",
+            "uuid": "a5cdf03b-57da-4049-9980-b5fd52d86a5a"
+        }
+    ],
+    "externalOrganizations": [
+        {
+            "systemName": "ExternalOrganization",
+            "uuid": "84b22d43-a9be-4036-ab4f-6ee657977985"
+        },
+        {
+            "systemName": "ExternalOrganization",
+            "uuid": "36e4f311-d01d-4647-97ac-76c3be3c93d3"
+        },
+        {
+            "systemName": "ExternalOrganization",
+            "uuid": "4c93f171-8f27-4c8e-a773-8dcec6bbfc4f"
+        }
+    ],
+    "totalNumberOfContributors": 4,
+    "managingOrganization": {
+        "systemName": "Organization",
+        "uuid": "ccabbdd2-7c91-4fbc-9aba-02460d81eedb"
+    },
+    "electronicVersions": [
+        {
+            "typeDiscriminator": "DoiElectronicVersion",
+            "pureId": 213783088,
+            "accessType": {
+                "uri": "/dk/atira/pure/core/openaccesspermission/closed",
+                "term": {
+                    "en_GB": "Closed Access"
+                }
+            },
+            "licenseType": {
+                "uri": "/dk/atira/pure/core/document/licenses/unspecified",
+                "term": {
+                    "en_GB": "Unspecified"
+                }
+            },
+            "visibleOnPortalDate": "2023-02-09",
+            "doi": "10.1097/JFN.0000000000000424",
+            "versionType": {
+                "uri": "/dk/atira/pure/researchoutput/electronicversion/versiontype/preprint",
+                "term": {
+                    "en_GB": "Submitted manuscript"
+                }
+            }
+        }
+    ],
+    "keywordGroups": [
+        {
+            "typeDiscriminator": "ClassificationsKeywordGroup",
+            "pureId": 216221325,
+            "logicalName": "/dk/atira/pure/keywords/taverne",
+            "name": {
+                "en_GB": "Taverne publication"
+            },
+            "classifications": [
+                {
+                    "uri": "/dk/atira/pure/keywords/taverne/unknown",
+                    "term": {
+                        "en_GB": "Unknown"
+                    }
+                }
+            ]
+        }
+    ],
+    "visibility": {
+        "key": "FREE",
+        "description": {
+            "en_GB": "Public - No restriction"
+        }
+    },
+    "workflow": {
+        "step": "approved",
+        "description": {
+            "en_GB": "Validated"
+        }
+    },
+    "identifiers": [
+        {
+            "typeDiscriminator": "Id",
+            "pureId": 213893792,
+            "idSource": "ORCID",
+            "value": "/0000-0002-3035-9095/work/128447867"
+        },
+        {
+            "typeDiscriminator": "Id",
+            "pureId": 262662737,
+            "idSource": "Scopus",
+            "value": "85168285476"
+        }
+    ],
+    "customDefinedFields": {},
+    "pages": "E30-E38",
+    "volume": "19",
+    "journalAssociation": {
+        "pureId": 213783087,
+        "title": {
+            "pureId": 213783082,
+            "title": "Journal of Forensic Nursing"
+        },
+        "issn": {
+            "pureId": 213783081,
+            "issn": "1919-3693"
+        },
+        "journal": {
+            "systemName": "Journal",
+            "uuid": "b291b681-0068-46ad-9d71-b668435761ea"
+        }
+    },
+    "journalNumber": "3",
+    "systemName": "ResearchOutput"
+}

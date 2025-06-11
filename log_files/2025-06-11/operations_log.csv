@@ -1,0 +1,2 @@
+date,uuid,get_pure_record,get_openalex_record,get_doaj_record,get_crossref_record,write_keyw,write_electr_versions,write_publ_status,write_contrib_status
+2025-06-11 10:42:46.482411,443897c3-a02e-442d-8d18-ee3e03ebb0ff,200,200,200,200,N/A,N/A,['add e-pub dt'],200
