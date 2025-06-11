@@ -26,7 +26,6 @@ from get_pure_persons.get_pure_internal_persons import get_pure_internal_persons
 
 from create_pure_record import create_ext_org, create_ext_person
 
-
 def analyze_scopus_contrib(scopus_record, int_person_df, pure_record):
     
     # Check Scopus person and org IDs against Pure to determine if internal/external
@@ -648,7 +647,7 @@ def enrich_df_removed_persons (df_intern_person_removed, int_person_df):
 vu_af_ids = ['60008734', '60029124', '60117141', '60109852', '60014594']
 
 #set uuids
-input_uuids = input('Enter one or more Pure RO UUIDs (comma separated) : ')
+input_uuids = input('Enter one or more Pure RO UUIDs (comma separated, without spaces) : ')
 publ_uuids = input_uuids.split(",")
 
 #df log files
