@@ -1,7 +1,8 @@
 
-def get_pure_internal_persons():
+def get_pure_internal_persons(base_url, api_524_key):
 
-    from config import PURE_BASE_URL, PURE_524_API_KEY
+      
+    #from config import base_url_P, base_url_A, api_524_key_P, api_524_key_A
     from concurrent.futures import ThreadPoolExecutor, as_completed
     import os, sys
     import requests
@@ -12,7 +13,7 @@ def get_pure_internal_persons():
     from IPython.display import clear_output
     import datetime
     import pandas
-
+     
     #get person affiliations and IDs from Pure
     
     int_person_list = []
@@ -22,29 +23,15 @@ def get_pure_internal_persons():
     pure_scopus_ids = []
 
     #url_person = "https://research.vu.nl/ws/api/524/persons?"
-    url_person = PURE_BASE_URL+"/ws/api/524/persons?"
-    """
-    while True:
-        pick = input("get only active staff? yes/no ").lower()
-        if pick[0] == 'y':
-            print("get active")
-            url_person = "https://research.vu.nl/ws/api/524/persons/active?"
-            break
-        elif pick[0] == 'n':
-            print("get all")
-            url_person = "https://research.vu.nl/ws/api/524/persons?"
-            break
-        else:
-            print("You have to choose Yes or No")
-    """
-
-    def get_response(offset, size):
+    url_person = base_url+"/ws/api/524/persons?"
+    
+    def get_response(offset, size, base_url, api_524_key):
         try:
             
-            response = requests.get(url_person, headers={'Accept': 'application/json'},params={'size': size, 'offset':offset, 'apiKey':PURE_524_API_KEY})
+            response = requests.get(url_person, headers={'Accept': 'application/json'},params={'size': size, 'offset':offset, 'apiKey':api_524_key})
             
-            for count,item in enumerate(response.json()['items'][0:]):  
-                                      
+            for count,item in enumerate(response.json()['items'][0:]):
+                    
                     count_scopus = 1
                     count_photo = 0
 
@@ -76,8 +63,6 @@ def get_pure_internal_persons():
                                 lname_knownas = ln_nv
                             else:
                                 continue
-                    else:
-                        continue
                     
                     #get affiliations
                     for affil in item['staffOrganisationAssociations']:
@@ -129,21 +114,20 @@ def get_pure_internal_persons():
                                 pass
                     else:
                         photo_type_ok = 'NA'
-
-                    
+                    #print (item['uuid'])
+                     
                     int_person_list.append({'person_uuid':item['uuid'], 'person_pure_id': item['pureId'], 'vunetid':vunetid, 'youshare':youshare_candidate,'scopus_ids':person_scopus_ids,'personaffiliations':person_affil_list, 'affil_first_dt': affil_first_dt, 'affil_last_dt': affil_last_dt,'default_fname': fname_def, 'default_lname': lname_def, 'knownas_fname': fname_knownas, 'knownas_lname': lname_knownas, 'name_list': name_list, 'photo_ok': photo_type_ok, 'photo_count': count_photo, 'visibility': item['visibility']['key']})                         
                     int_person_dict[item['uuid']] = {'person_uuid':item['uuid'], 'person_pure_id': item['pureId'], 'youshare':youshare_candidate,'scopus_ids':person_scopus_ids,'personaffiliations':person_affil_list, 'affil_first_dt': affil_first_dt, 'affil_last_dt': affil_last_dt,'default_fname': fname_def, 'default_lname': lname_def, 'knownas_fname': fname_knownas, 'knownas_lname': lname_knownas, 'name_list': name_list, 'photo_ok': photo_type_ok, 'photo_count': count_photo, 'visibility': item['visibility']['key']}
-            
+
             return int_person_list, int_person_dict, person_scopus_ids, scopus_id2affil, pure_scopus_ids
         except requests.exceptions.RequestException as e:
             print (e)
             return e
      
-    def runner():
+    def runner(base_url, api_524_key):
         size = 1000
         offset = 0
-        response = requests.get(url_person, headers={'Accept': 'application/json'},params={ 'apiKey':PURE_524_API_KEY})
-        
+        response = requests.get(url_person, headers={'Accept': 'application/json'},params={'apiKey':api_524_key})
         no_records = (response.json()['count'])
         cycles = (math.ceil(no_records/size))
         print (f"getting {no_records} person records from Pure in {cycles} cycles")
@@ -151,14 +135,14 @@ def get_pure_internal_persons():
         threads= []
         with ThreadPoolExecutor(max_workers=10) as executor:
             for request in range (cycles)[0:]:
-                threads.append(executor.submit(get_response, offset, size))
+                threads.append(executor.submit(get_response, offset, size, base_url, api_524_key))
                 offset += size
                 
             for task in as_completed(threads):
                 print (f"got {len(int_person_list)} of {no_records} records")
                 #clear_output('wait') 
           
-    runner()
+    runner(base_url, api_524_key)
 
     person_df_1 = pandas.DataFrame.from_dict(int_person_list).explode('scopus_ids')
     #person_df_1.to_excel('uuid_list.xls', index=False)
@@ -167,8 +151,12 @@ def get_pure_internal_persons():
     #person_df_2.to_excel('scopus_dict.xls', index=True)
     #person_df_3.to_excel('uuid_dict.xls', index=True)
     
-        
+    #person_df_1.to_csv(os.path.join(sys.path[0], "internal_persons_all.csv"), encoding='utf-8', index = False)
+
     return int_person_list, int_person_dict, person_scopus_ids, scopus_id2affil, pure_scopus_ids, person_df_1
 
 #get_pure_internal_persons()
+
+
+
 

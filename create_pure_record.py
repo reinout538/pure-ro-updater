@@ -5,14 +5,14 @@ import pandas as pd
 import requests
 import json
 
-from config import PURE_BASE_URL, PURE_CRUD_API_KEY
+#from config import base_url, crud_api_key
 
 file_dir = sys.path[0]
 
-def get_uri_country(org_country):
+def get_uri_country(org_country, base_url, crud_api_key):
 
     country_uri = None
-    response_allowed_countries = requests.get(PURE_BASE_URL+'/ws/api/external-organizations/allowed-address-countries', headers={'Accept': 'application/json', 'Content-Type': 'application/json', 'api-key': PURE_CRUD_API_KEY})
+    response_allowed_countries = requests.get(base_url+'/ws/api/external-organizations/allowed-address-countries', headers={'Accept': 'application/json', 'Content-Type': 'application/json', 'api-key': crud_api_key})
     
     for country in response_allowed_countries.json()["classifications"]:
         if country["term"]["en_GB"] == org_country:
@@ -22,9 +22,9 @@ def get_uri_country(org_country):
 
     return country_uri
 
-def create_ext_org(org_id, org_name, org_country):
+def create_ext_org(org_id, org_name, org_country, base_url, crud_api_key):
   
-    country_uri = get_uri_country(org_country)
+    country_uri = get_uri_country(org_country, base_url, crud_api_key)
     
     json_extorg = json.dumps(
             {
@@ -56,10 +56,10 @@ def create_ext_org(org_id, org_name, org_country):
             }
             )
 
-    create_extorg = requests.put(PURE_BASE_URL+'/ws/api/external-organizations/', data = json_extorg, headers={'Accept': 'application/json', 'Content-Type': 'application/json', 'api-key':PURE_CRUD_API_KEY})
+    create_extorg = requests.put(base_url+'/ws/api/external-organizations/', data = json_extorg, headers={'Accept': 'application/json', 'Content-Type': 'application/json', 'api-key':crud_api_key})
     return (create_extorg.json()['uuid'])
 
-def create_ext_person(au_id, au_surn, au_fname):
+def create_ext_person(au_id, au_surn, au_fname, base_url, crud_api_key):
     
     json_extpers = json.dumps({
       "identifiers": [
@@ -95,7 +95,7 @@ def create_ext_person(au_id, au_surn, au_fname):
            
             )
 
-    create_extpers = requests.put(PURE_BASE_URL+'/ws/api/external-persons/', data = json_extpers, headers={'Accept': 'application/json', 'Content-Type': 'application/json', 'api-key':PURE_CRUD_API_KEY})
+    create_extpers = requests.put(base_url+'/ws/api/external-persons/', data = json_extpers, headers={'Accept': 'application/json', 'Content-Type': 'application/json', 'api-key':crud_api_key})
     return (create_extpers.json()['uuid'])
 
 #main

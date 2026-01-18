@@ -4,13 +4,13 @@ import pandas as pd
 import os, sys
 import csv
 
-from config import*
+#from config import*
 
-def get_scopus(EID):
+def get_scopus(EID, scopus_api_key):
     
     url_scopus = ("https://api.elsevier.com/content/abstract/eid/2-s2.0-" + EID + "?")
     
-    response_scopus = requests.get(url_scopus, headers={'Accept': 'application/json'},params={'apiKey':SCOPUS_API_KEY})
+    response_scopus = requests.get(url_scopus, headers={'Accept': 'application/json'},params={'apiKey':scopus_api_key})
     if response_scopus.status_code == 200:  
         json_scopus = response_scopus.json()['abstracts-retrieval-response']
     else:
@@ -20,15 +20,15 @@ def get_scopus(EID):
 
 class getScopus():
     
-    def __init__(self, EID):
+    def __init__(self, EID, scopus_api_key):
 
         if EID is None:
             self.status = "no eid"
             self.set_all_none()
             return
 
-        json_scopus = get_scopus(EID)[0]
-        self.status = get_scopus(EID)[1]
+        json_scopus = get_scopus(EID, scopus_api_key)[0]
+        self.status = get_scopus(EID, scopus_api_key)[1]
 
         if json_scopus != None:
             self.type = self.get_type(json_scopus)
@@ -137,7 +137,7 @@ class getScopus():
             if isinstance(affil_data,dict):
                 aff_id = affil_data['@id']
                 affil_dict[aff_id] = {'affil_name':affil_data['affilname'],'affil_country':affil_data['affiliation-country']}
-        print (affil_dict)
+        
         return affil_dict
         
     def get_persons(self, json_scopus):

@@ -38,6 +38,7 @@ class getDOAJ():
 
         if doaj_record != None and doaj_record['total'] == 1:
             
+            self.json = json.dumps(doaj_record, indent = 4)
             self.doaj_journ = True
             self.has_apc = doaj_record['results'][0]['bibjson']['apc']['has_apc']
             self.doaj_start = self.get_doaj_start(doaj_record)
@@ -60,7 +61,8 @@ class getDOAJ():
         return (doaj_start)
 
 """
-doaj = getDOAJ(None)
+doaj = getDOAJ('2053-9711')
 
 print (doaj.status, doaj.doaj_journ, doaj.has_apc, doaj.doaj_start, doaj.record_count)
+print (doaj.json)
 """
