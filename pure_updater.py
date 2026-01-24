@@ -280,14 +280,14 @@ def create_scopus_contrib(pure_record, scopus_contrib, scopus_ext_org_df, scopus
     #loop through scopus ext persons and check if they exist in pure - if not create - get uuid-pure
     print ('check if ext persons exist')
     for index_no in scopus_ext_person_df.index[0:]:
-        #check if ext org exists in Pure
+        #check if ext person exists in Pure
         print (index_no, ' of ', len(scopus_ext_person_df.index))
         data = json.dumps ({"searchString": scopus_ext_person_df['au-id'][index_no]})
         response_ext_pers = requests.post(base_url+'/ws/api/external-persons/search', data = data, headers={'Accept': 'application/json', 'Content-Type': 'application/json', 'api-key': crud_api_key})
         
         if response_ext_pers.json()['count'] == 0:
             print ('create external person record')
-            new_ext_pers = create_ext_person(scopus_ext_person_df['au-id'][index_no], scopus_ext_person_df['au-surnm'][index_no], scopus_ext_person_df['au-fname'][index_no], base_url, crud_api_key)
+            new_ext_pers = create_ext_person(scopus_ext_person_df['au-id'][index_no], scopus_ext_person_df['au-surnm'][index_no], scopus_ext_person_df['au-fname'][index_no], scopus_ext_person_df['af-ids'][index_no], org_id_scopus2pure, base_url, crud_api_key)
             uuid_ext_pers = new_ext_pers
             
         else:
