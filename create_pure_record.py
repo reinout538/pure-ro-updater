@@ -9,6 +9,16 @@ import json
 
 file_dir = sys.path[0]
 
+def _build_affil_extpers(au_affil, extorg_ids):
+    affil_list = []
+    for affil_id in au_affil:
+        affil_list.append({
+      "systemName": "ExternalOrganization",
+      "uuid": extorg_ids[affil_id]
+    })
+    
+    return affil_list
+
 def get_uri_country(org_country, base_url, crud_api_key):
 
     country_uri = None
@@ -59,8 +69,11 @@ def create_ext_org(org_id, org_name, org_country, base_url, crud_api_key):
     create_extorg = requests.put(base_url+'/ws/api/external-organizations/', data = json_extorg, headers={'Accept': 'application/json', 'Content-Type': 'application/json', 'api-key':crud_api_key})
     return (create_extorg.json()['uuid'])
 
-def create_ext_person(au_id, au_surn, au_fname, base_url, crud_api_key):
-    
+def create_ext_person(au_id, au_surn, au_fname, au_affil, extorg_ids, base_url, crud_api_key):
+    print(au_affil)
+    print(extorg_ids)
+    affil_list = _build_affil_extpers(au_affil, extorg_ids)
+    print(affil_list)
     json_extpers = json.dumps({
       "identifiers": [
         {
@@ -84,6 +97,7 @@ def create_ext_person(au_id, au_surn, au_fname, base_url, crud_api_key):
           "en_GB": "External person"
         }
       },
+      "externalOrganizations": affil_list,
       "workflow": {
         "step": "forApproval",
         "description": {
