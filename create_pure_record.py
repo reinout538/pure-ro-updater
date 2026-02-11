@@ -70,10 +70,9 @@ def create_ext_org(org_id, org_name, org_country, base_url, crud_api_key):
     return (create_extorg.json()['uuid'])
 
 def create_ext_person(au_id, au_surn, au_fname, au_affil, extorg_ids, base_url, crud_api_key):
-    print(au_affil)
-    print(extorg_ids)
+    
     affil_list = _build_affil_extpers(au_affil, extorg_ids)
-    print(affil_list)
+
     json_extpers = json.dumps({
       "identifiers": [
         {
