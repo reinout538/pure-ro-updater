@@ -70,41 +70,6 @@ def analyze_scopus_contrib(scopus_record, int_person_df):
             origin = 'external'
             au_id = author['auth_id']
 
-            """
-            #if author has VU-affil in Scopus - keep as internal
-            for affil in author['auth_affil']:
-                if affil['affil_id'] in vu_af_ids:        
-                    origin = 'external'
-                    au_id = author['auth_id']
-                    df_intern_person_no_auid.loc[len(df_intern_person_no_auid.index)] = [pure_record.uuid, pure_record.main_title, pure_record.sub_title, pure_record.managing_org, au_id, author['auth_id']]
-                    break
-                
-                else:
-                    #To prevent internal author becoming external if Scopus ID is missing from person record - match on last name Scopus vs Pure publ record
-                    match_count = 0
-                    for contributor in pure_record.contributors:
-                        if contributor['typeDiscriminator'] == "InternalContributorAssociation":
-                            if contributor['name']['lastName'].lower() == author['auth_last_name'].lower():
-                                match_count += 1
-                                au_id = contributor['person']['uuid']
-                                origin = 'internal'    
-                        else:
-                            continue
-                    #in case of 0 or 1+ last name matches: label as external author anyway - if there is 1 match, first check if internal person does have scopus AU-ID - if not keep matched person in record
-                    if match_count != 1:
-                        au_id = author['auth_id']
-                        origin = 'external'
-                    else:
-                        #check if matched author record in Pure does have any scopus AU-ID
-                        match_uuid = int_person_df.loc[int_person_df['person_uuid'] == au_id]
-                        for row_label, row in match_uuid.iterrows():
-                            if pd.isna (row['scopus_ids']) == False:
-                                au_id = author['auth_id']
-                                origin = 'external'
-                            else:
-                                #keep internal person as matched above and add row to df for authors listed on a publ without scopus AU-ID in Pure (should be checked if correctly related to publ)
-                                df_intern_person_no_auid.loc[len(df_intern_person_no_auid.index)] = [pure_record.uuid, pure_record.main_title, pure_record.sub_title, pure_record.managing_org, au_id, author['auth_id']] 
-               """ 
         # Create author affiliations
         
         # External author
@@ -414,7 +379,7 @@ def create_scopus_contrib(pure_record, scopus_contrib, scopus_ext_org_df, scopus
                 row = [pure_record.uuid, pure_record.main_title, pure_record.sub_title, pure_record.managing_org, "", "", contributor['person']['uuid'], "", "", "", matched_sc_auth_lname, matched_sc_auth_fname, matched_sc_auth_auid, has_vu_affil]
                 removed_persons.append(row)
                 
-    #determine managing org
+    #determine managing org - if no internal affiliations: MOU = VUA - else take first internal organisation of contributor section
     if int_org_list_json == []:
         man_org = '971a8f57-d401-4e8b-9b1a-a1b97e46e0ea'
     else:
@@ -607,14 +572,14 @@ def set_ev_update (pure_record, openalex_record):
             update_list.append('add doi-access-status')
 
     #check links
-    has_pmc = has_link = "false"
+    has_pmc = has_link = False
     if pure_record.electr_versions != None:
         for ev in pure_record.electr_versions:
             if ev['typeDiscriminator'] == 'LinkElectronicVersion':
-                has_link = "true"
+                has_link = True
                 url_list.append(ev['link'])
                 if "ncbi.nlm.nih.gov/pmc" in ev['link']:
-                    has_pmc = "true"
+                    has_pmc = True
                 else:
                     continue
             else:
@@ -622,7 +587,7 @@ def set_ev_update (pure_record, openalex_record):
 
     #add links
     #pmc link is preferable - version is left out as openalex data appears to be unreliable in this respect
-    if has_pmc == "false" and openalex_record.pmc_loc_landing != None:
+    if has_pmc == False and openalex_record.pmc_loc_landing != None:
         update_list.append('add pmc-link')
         ev_list.append({
           "typeDiscriminator": "LinkElectronicVersion",
@@ -711,7 +676,7 @@ def enrich_df_removed_persons (df_intern_person_removed, int_person_df):
                     
         
 #MAIN
-vu_af_ids = ['60008734', '60029124', '60117141', '60109852', '60014594']
+vu_af_ids = ['60008734', '60029124', '60117141', '60109852', '60014594', '60255885']
 
 #set env variables
 settings = choose_env()
@@ -751,7 +716,7 @@ while True:
 
 
 #df log files
-df_log = pd.DataFrame(columns=['date','uuid','get_pure_record','get_openalex_record', 'get_doaj_record', 'get_crossref_record', 'write_keyw', 'write_electr_versions', 'write_publ_status', 'write_contrib_status', 'write_identif_status'])
+df_log = pd.DataFrame(columns=['date','uuid', 'get_pure_record', 'get_scopus_record','get_openalex_record', 'get_doaj_record', 'get_crossref_record', 'write_keyw', 'write_electr_versions', 'write_publ_status', 'write_contrib_status', 'write_identif_status'])
 df_oa_values = pd.DataFrame(columns=['uuid', 'pure_id', 'doi', 'journal_issn', 'pub_yr_first' ,'unl_status_pure', 'openalex_oa_status', 'openalex_doaj_status', 'openalex_license', 'doaj_start', 'doaj_apc', 'doaj_journal', 'unl_status_new', 'oa_colour_new'])
 df_crossref = pd.DataFrame(columns=['status-code', 'doi', 'type', 'publisher', 'license-list', 'created_pub_year', 'created_pub_month', 'created_pub_day', 'print_pub_year', 'print_pub_month', 'print_pub_day', 'online_pub_year', 'online_pub_month', 'online_pub_day', 'issued_pub_year', 'issued_pub_month', 'issued_pub_day', 'issue_pub_year', 'issue_pub_month', 'issue_pub_day', 'indexed_year', 'indexed_month', 'indexed_day'])
 df_openalex = pd.DataFrame(columns=['openalex.id', 'doi', 'pub_year', 'pub_date', 'pub_month', 'pub_day', 'main_title', 'sub_title', 'oa_status', 'prim_loc_landing', 'prim_loc_pdf', 'prim_loc_is_oa', 'prim_loc_in_doaj', 'prim_loc_license', 'prim_loc_version', 'green_url_landing', 'vor_pdf_url', 'vor_pdf_license' ,'pmc_loc_landing', 'pmc_loc_pdf', 'pmc_loc_is_oa', 'pmc_loc_license', 'pmc_loc_version', 'journal', 'issn', 'volume', 'issue', 'first_page', 'last_page'])
@@ -936,9 +901,10 @@ for n, publ_uuid in enumerate(publ_uuids):
         pure_record = getPure(publ_uuid, base_url, crud_api_key)
         open(os.path.join(path_pub, f"{publ_uuid}_after.json"), 'w').write(json.dumps(pure_record.json, indent = 4))
 
-    df_log.loc[len(df_log.index)] = [datetime.datetime.now(), publ_uuid,pure_record.status, openalex_record.status, doaj_record.status, crossref_record.status, put_keyw_log, put_doi_log, put_publ_status_log, put_contrib_log, put_identif_log]   
+    df_log.loc[len(df_log.index)] = [datetime.datetime.now(), publ_uuid,pure_record.status, scopus_record.status, openalex_record.status, doaj_record.status, crossref_record.status, put_keyw_log, put_doi_log, put_publ_status_log, put_contrib_log, put_identif_log]   
     df_oa_values.loc[len(df_oa_values.index)] = [publ_uuid, pure_record.pure_id, pure_record.doi, pure_record.journal_issn, pure_record.pub_yr_first, keyw_upd[2], openalex_record.oa_status, openalex_record.prim_loc_in_doaj, openalex_record.prim_loc_license, doaj_record.doaj_start, doaj_record.has_apc, doaj_record.doaj_journ, keyw_upd[3], '']
 
+    df_log.to_csv(os.path.join(path_session, "operations_log.csv"), encoding='utf-8', index = False)
 
 enrich_df_removed_persons (df_intern_person_removed, int_person_df)
 
