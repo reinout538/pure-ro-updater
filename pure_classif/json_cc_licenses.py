@@ -46,4 +46,4 @@ unspecified = {
         "en_GB": "Unspecified"
       }
     }
-cc_upw2pure = {'cc-by-nd':'/dk/atira/pure/core/document/licenses/cc_by_nd', 'cc-by':cc_by,'cc-by-nc':cc_by_nc,'cc-by-nc-nd':cc_by_nc_nd,'cc-by-nc-sa':cc_by_nc_sa,'cc-by-sa':cc_by_sa,'cc0':cc0, None:unspecified}
+cc_upw2pure = {'cc-by-nd':'/dk/atira/pure/core/document/licenses/cc_by_nd', 'cc-by':cc_by,'cc-by-nc':cc_by_nc,'cc-by-nc-nd':cc_by_nc_nd,'cc-by-nc-sa':cc_by_nc_sa,'cc-by-sa':cc_by_sa,'cc0':cc0, 'publisher-specific-oa': unspecified, 'other-oa': unspecified, None:unspecified}
