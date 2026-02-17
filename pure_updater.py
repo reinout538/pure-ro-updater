@@ -555,7 +555,7 @@ def set_keyword_update (pure_record, openalex_record, doaj_record):
     return keyw_upd, update_list, oa_unl_value, unl_status
 
 
-def set_ev_update (pure_record, openalex_record):
+def set_ev_update (pure_record, openalex_record, unl_status):
 
     ev_list = pure_record.electr_versions
     update_list = []
@@ -593,14 +593,13 @@ def set_ev_update (pure_record, openalex_record):
           "typeDiscriminator": "LinkElectronicVersion",
           "accessType": ev_status_open,
           "link": openalex_record.pmc_loc_landing})
-    
-    elif openalex_record.green_url_landing != None and openalex_record.green_url_landing not in url_list:
+    #add link to other repository found in openalex if publication is not already gold OA
+    elif openalex_record.green_url_landing != None and openalex_record.green_url_landing not in url_list and unl_status not in [oa_a['uri'], oa_b['uri']]:
         update_list.append('add repos-link acc')
         ev_list.append({
               "typeDiscriminator": "LinkElectronicVersion",
               "accessType": ev_status_open,
-              "link": openalex_record.green_url_landing,
-              "versionType": ev_version_accepted})
+              "link": openalex_record.green_url_landing})
 
                        
     ev_upd =(json.dumps({"electronicVersions" : ev_list}, indent = 4))
@@ -691,8 +690,8 @@ publ_uuids = input_uuids.split(",")
 
 #choose which data to update
 while True:
-    update_contrib = input('Update contributor section - y/n?: ').lower()
-    if update_contrib and update_contrib[0] in ('y', 'n'):
+    update_contrib = input('Update contributor section - y/n/d(dryrun)?: ').lower()
+    if update_contrib and update_contrib[0] in ('y', 'n', 'd'):
         break
     print("You have to choose Y or N.")
 
@@ -732,7 +731,8 @@ while os.path.exists(path_session) == True:
     path_session = f"{os.path.join(file_dir, 'log_files', str(datetime.datetime.now().strftime('%Y-%m-%d')))}_{str(path_session_add)}"
 os.makedirs (path_session)
 #get internal person records from Pure as df
-int_person_df = get_pure_internal_persons(base_url, api_524_key)[5]
+if update_contrib != 'n':
+    int_person_df = get_pure_internal_persons(base_url, api_524_key)[5]
 
 #loop through uuids
 for n, publ_uuid in enumerate(publ_uuids):
@@ -747,7 +747,8 @@ for n, publ_uuid in enumerate(publ_uuids):
     #get pure publication record
     pure_record = getPure(publ_uuid, base_url, crud_api_key)
     print ('get pure record: ', pure_record.status)
-
+    if pure_record.status != 200:
+        continue
     #log json record before updates
     open(os.path.join(path_pub, f"{publ_uuid}_before.json"), 'w').write(json.dumps(pure_record.json, indent = 4))
     
@@ -779,7 +780,7 @@ for n, publ_uuid in enumerate(publ_uuids):
 
     #RUN FUNCTIONS TO CREATE JSON UPDATES FOR PURE
     
-    if scopus_record.status == 200:
+    if scopus_record.status == 200 and update_contrib != 'n':
         #analyze scopus contributor section against dataframe of all internal pure-person records
         scopus_analysis = analyze_scopus_contrib(scopus_record, int_person_df)
         scopus_contrib = scopus_analysis[0]
@@ -804,8 +805,9 @@ for n, publ_uuid in enumerate(publ_uuids):
     keyw_upd = set_keyword_update (pure_record, openalex_record, doaj_record)
     keyw_upd_json = keyw_upd[0]
     keyw_upd_list = keyw_upd[1]
+    unl_status = keyw_upd[3]
     
-    ev_upd = set_ev_update (pure_record, openalex_record)
+    ev_upd = set_ev_update (pure_record, openalex_record, unl_status)
     ev_upd_json = ev_upd[0]
     ev_upd_list = ev_upd[1]
 
@@ -906,7 +908,8 @@ for n, publ_uuid in enumerate(publ_uuids):
 
     df_log.to_csv(os.path.join(path_session, "operations_log.csv"), encoding='utf-8', index = False)
 
-enrich_df_removed_persons (df_intern_person_removed, int_person_df)
+if update_contrib != 'n':
+    enrich_df_removed_persons (df_intern_person_removed, int_person_df)
 
 #write operations log
 df_log.to_csv(os.path.join(path_session, "operations_log.csv"), encoding='utf-8', index = False)
