@@ -565,8 +565,14 @@ def set_ev_update (pure_record, openalex_record, unl_status):
     if pure_record.doi != None:
         ev_list[pure_record.doi_index]['doi'] = pure_record.doi
         if (pure_record.doi_license == None or pure_record.doi_license == unspecified['uri']) and openalex_record.prim_loc_license != None:
-            ev_list[pure_record.doi_index]['licenseType'] = cc_upw2pure[openalex_record.prim_loc_license]
-            update_list.append('add doi-license')
+            #try to map openalex license to pure license
+            try:
+                pure_license = cc_upw2pure[openalex_record.prim_loc_license]
+                ev_list[pure_record.doi_index]['licenseType'] = pure_license
+                update_list.append('add doi-license')
+            except:
+                pure_license = None
+            
         if pure_record.doi_access == ev_status_unknown['uri'] and openalex_record.oa_status in ['diamond', 'gold', 'hybrid']:
             ev_list[pure_record.doi_index]['accessType'] = ev_status_open
             update_list.append('add doi-access-status')
@@ -780,7 +786,7 @@ for n, publ_uuid in enumerate(publ_uuids):
 
     #RUN FUNCTIONS TO CREATE JSON UPDATES FOR PURE
     
-    if scopus_record.status == 200 and update_contrib != 'n':
+    if update_contrib != 'n' and scopus_record.status == 200 and scopus_record.contrib is not []:
         #analyze scopus contributor section against dataframe of all internal pure-person records
         scopus_analysis = analyze_scopus_contrib(scopus_record, int_person_df)
         scopus_contrib = scopus_analysis[0]
