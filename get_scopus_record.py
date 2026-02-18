@@ -4,6 +4,7 @@ import pandas as pd
 import os, sys
 import csv
 import time
+import pycountry_convert
 
 #from config import*
 
@@ -44,7 +45,7 @@ class getScopus():
         json_scopus = get_scopus(EID, scopus_api_key)[0]
         self.status = get_scopus(EID, scopus_api_key)[1]
 
-        if json_scopus != None and 'item' in json_scopus:
+        if json_scopus is not None and any(key in json_scopus for key in ['item', 'authors', 'coredata', 'affiliation']):
             self.type = self.get_type(json_scopus)
             self.sub_type = self.get_subtype(json_scopus)
             self.pub_year = self.get_pub_date(json_scopus)[0]
@@ -87,22 +88,18 @@ class getScopus():
         self.type = self.sub_type = self.pub_year = self.pub_month = self.pub_day = self.doi = self.oa_flag = self.main_title = self.sub_title = self.abstract = self.affil_org = self.contrib = self.mixed_affil = self.collab = self.pages = self.no_pages = self.issue = self.volume = self.art_no = self.journal = self.isbn = self.publisher = self.proc_title = self.host_title = self.editors = self.series_issns = self.event_name = self.event_start_date = self.event_end_date = self.event_country = self.event_city = self.extorg_country = self.corresp_author = None
             
     def get_type(self, json_scopus):
-        return json_scopus['coredata']['srctype']
+        return json_scopus['coredata'].get('srctype')
         
     def get_subtype(self, json_scopus): 
-        return json_scopus['coredata']['subtype']
+        return json_scopus['coredata'].get('subtype')
         
     def get_pub_date(self, json_scopus):
-        pub_date = json_scopus['item']['bibrecord']['head']['source']['publicationdate']
-        pub_dt_yr = pub_date['year']
-        if 'month' in pub_date:
-            pub_dt_mo = pub_date['month']
-        else: pub_dt_mo = None
-        if 'day' in pub_date:
-            pub_dt_day = pub_date['day']
-        else: pub_dt_day = None
-        
-        return pub_dt_yr, pub_dt_mo, pub_dt_day 
+        pub_date = (json_scopus['item']
+                .get('bibrecord', {})
+                .get('head', {})
+                .get('source', {})
+                .get('publicationdate', {}))
+        return pub_date.get('year'), pub_date.get('month'), pub_date.get('day')
     
     def get_title(self, json_scopus):
         if 'dc:title' in json_scopus['coredata']:
@@ -158,7 +155,10 @@ class getScopus():
     def get_persons(self, json_scopus):
         
         author_list = []
-        authors_json = json_scopus['authors']['author']
+        authors_json = (json_scopus.get('authors') or {}).get('author')
+        if authors_json is None:
+            mixed_affil_situation = False
+            return author_list, mixed_affil_situation
         
         affil_dict = self.get_affil_org(json_scopus)
         #author_dict[au_id] = {'au-id':au_id,'au-seq':au_seq, 'au-surnm':au_surnm, 'au-init':au_init, 'au-index-nm':au_index_nm, 'au-orcid':au_orcid, 'au-affils':[], 'pure-uuid': None}
@@ -225,7 +225,7 @@ class getScopus():
     def get_collab(self, json_scopus):
         
         collab_list = []
-        author_groups = json_scopus['item']['bibrecord']['head']['author-group']
+        author_groups = json_scopus['item']['bibrecord']['head'].get('author-group')
         
         #get author collaboration if present (assuming this is always a list not a dict)
         if isinstance(author_groups,list):
@@ -327,7 +327,7 @@ class getScopus():
     
     def get_publisher(self, json_scopus):
         if 'publisher' in json_scopus['item']['bibrecord']['head']['source']:
-            publisher = json_scopus['item']['bibrecord']['head']['source']['publisher']['publishername']
+            publisher = json_scopus['item']['bibrecord']['head']['source']['publisher'].get('publishername')
             return publisher
     
     def get_proc_title(self, json_scopus):
@@ -441,16 +441,19 @@ class getScopus():
         return event_country, event_city
     
     def get_extorg_country(self, json_scopus):
-        
-        author_group = json_scopus['item']['bibrecord']['head']['author-group']
-                
+
+        ext_org_dict = {}
+        author_group = json_scopus['item']['bibrecord']['head'].get('author-group')
+        if author_group is None:
+            return ext_org_dict
         for group in author_group:
             if 'affiliation' in group:
                 try:
                     ext_org_country = pycountry_convert.country_alpha3_to_country_alpha2(group['affiliation']['@country'].upper()).lower()
-                    ext_org_dict[group['affiliation']['@afid']] = ext_org_country
-                                
+                    ext_org_dict[group['affiliation']['@afid']] = ext_org_country            
                 except: pass
+
+        return ext_org_dict
     
     def get_correspondence(self, json_scopus):
 
@@ -473,7 +476,7 @@ class getScopus():
 
 file_dir = sys.path[0]
 
-EID_list = ['84907821888']
+EID_list = ['105019728985']
 
 df_scopus = pd.DataFrame(columns=['eid', 'status', 'contrib'])
 
@@ -481,13 +484,13 @@ for n, EID in enumerate(EID_list):
 
     print (n, EID)
     
-    scopus = getScopus(EID)
-    print (scopus.mixed_affil)
+    scopus = getScopus(EID, 'a0ff7557d0c58ceb89469ab5291bfc4d')
+    print (scopus.collab)
     
     df_scopus.loc[len(df_scopus.index)] = [EID, scopus.status, scopus.contrib]
     df_scopus.to_csv(os.path.join(file_dir, "scopus_data.csv"), encoding='utf-8', index = False)
-"""
 
+"""
 
 """
 #try it out
