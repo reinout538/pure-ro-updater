@@ -11,11 +11,17 @@ file_dir = sys.path[0]
 
 def _build_affil_extpers(au_affil, extorg_ids):
     affil_list = []
+    uuid_list = []
     for affil_id in au_affil:
-        affil_list.append({
-      "systemName": "ExternalOrganization",
-      "uuid": extorg_ids[affil_id]
-    })
+        uuid = extorg_ids[affil_id]
+        if uuid in uuid_list:
+            continue
+        else:
+            uuid_list.append(extorg_ids[affil_id])
+            affil_list.append({
+          "systemName": "ExternalOrganization",
+          "uuid": uuid
+            })
     
     return affil_list
 
@@ -70,9 +76,8 @@ def create_ext_org(org_id, org_name, org_country, base_url, crud_api_key):
     return (create_extorg.json()['uuid'])
 
 def create_ext_person(au_id, au_surn, au_fname, au_affil, extorg_ids, base_url, crud_api_key):
-    
-    affil_list = _build_affil_extpers(au_affil, extorg_ids)
 
+    affil_list = _build_affil_extpers(au_affil, extorg_ids)
     json_extpers = json.dumps({
       "identifiers": [
         {
@@ -109,6 +114,7 @@ def create_ext_person(au_id, au_surn, au_fname, au_affil, extorg_ids, base_url, 
             )
 
     create_extpers = requests.put(base_url+'/ws/api/external-persons/', data = json_extpers, headers={'Accept': 'application/json', 'Content-Type': 'application/json', 'api-key':crud_api_key})
+    
     return (create_extpers.json()['uuid'])
 
 #main
