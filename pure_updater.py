@@ -386,95 +386,98 @@ def create_scopus_contrib(pure_record, scopus_contrib, scopus_ext_org_df, scopus
         man_org = int_org_list_json[0]['uuid']
     return contrib_upd, removed_persons, man_org
 
-def set_publ_status_update (pure_record, crossref_record):
-
-    #add final published date crossref if N/A in pure
+def set_publ_status_update(pure_record, crossref_record):
     pub_status_list = pure_record.json["publicationStatuses"]
     update_list = []
-    fin_pub_dt = e_pub_dt = {}
-    
-    if pure_record.print_year == None:
-        if crossref_record.print_year != None:
-            fin_pub_dt['year'] = crossref_record.print_year
-            if crossref_record.print_month != None:
-                fin_pub_dt['month'] = crossref_record.print_month
-            if crossref_record.print_day != None:
-                fin_pub_dt['day'] = crossref_record.print_day
-        elif crossref_record.issue_year != None:
-            fin_pub_dt['year'] = crossref_record.issue_year
-            if crossref_record.issue_month != None:
-                fin_pub_dt['month'] = crossref_record.issue_month
-            if crossref_record.issue_day != None:
-                fin_pub_dt['day'] = crossref_record.issue_day
-        else:
-            pass
-    else:
-        pass
 
-    #check if final publ status update is valid:
-    if fin_pub_dt != {}:
-        if pure_record.online_year != None:
-            if fin_pub_dt['year'] >= pure_record.online_year:
-                fin_upd_valid = 'true'
-            else:
-                fin_upd_valid = 'false'
-        else:
-            fin_upd_valid = 'true'
-    else:
-        fin_upd_valid = 'false'
+    def build_date(src, prefix):
+        year = getattr(src, f'{prefix}_year')
+        if year is None:
+            return {}
+        date = {'year': year}
+        for part in ('month', 'day'):
+            val = getattr(src, f'{prefix}_{part}')
+            if val is not None:
+                date[part] = val
+        return date
 
-    if fin_upd_valid == 'true'and pure_record.print_year == None:
-        update_list.append('add final pub dt')
-        pub_status_list.append({     
-                      "publicationStatus": {
-                        "uri": "/dk/atira/pure/researchoutput/status/published",
-                        "term": {
-                          "en_GB": "Published"
-                        }
-                      },
-                      "publicationDate": fin_pub_dt
-                    })
-       
-    #add online published date crossref if N/A in pure
-    if pure_record.online_year == None:
-        if crossref_record.online_year != None:
-            e_pub_dt['year'] = crossref_record.online_year
-            if crossref_record.online_month != None:
-                e_pub_dt['month'] = crossref_record.online_month
-            if crossref_record.online_day != None:
-                e_pub_dt['day'] = crossref_record.online_day
-        else:
-            pass
-    else:
-        pass
-   
-    #check if online publ status update is valid:
-    if e_pub_dt != {}:
-        if pure_record.print_year != None:
-            if e_pub_dt['year'] <= pure_record.print_year:
-                e_upd_valid = 'true'
-            else:
-                e_upd_valid = 'false'
-        else:
-            e_upd_valid = 'true'
-    else:
-        e_upd_valid = 'false'
-    
-    if e_upd_valid == 'true' and pure_record.online_year == None:
-        update_list.append('add e-pub dt')
-        pub_status_list.append({     
-                      "publicationStatus": {
-                        "uri": "/dk/atira/pure/researchoutput/status/epub",
-                        "term": {
-                          "en_GB": "E-pub ahead of print"
-                        }
-                      },
-                      "publicationDate": e_pub_dt
-                    })
-    
-    pub_status_upd = (json.dumps({"publicationStatuses" : pub_status_list}, indent =4))
-    
-    return pub_status_upd, update_list
+    def make_status_entry(uri, term_label, date):
+        return {
+            "publicationStatus": {"uri": uri, "term": {"en_GB": term_label}},
+            "publicationDate": date
+        }
+
+    def date_geq(d1, d2_year, d2_month, d2_day):
+        """Return True if date dict d1 >= d2 (year/month/day), comparing only available parts."""
+        if d1['year'] != d2_year:
+            return d1['year'] > d2_year
+        m1, m2 = d1.get('month'), d2_month
+        if m1 is None or m2 is None:
+            return True
+        if m1 != m2:
+            return m1 > m2
+        d1d, d2d = d1.get('day'), d2_day
+        if d1d is None or d2d is None:
+            return True
+        return d1d >= d2d
+
+    def date_leq(d1, d2_year, d2_month, d2_day):
+        """Return True if date dict d1 <= d2 (year/month/day), comparing only available parts."""
+        if d1['year'] != d2_year:
+            return d1['year'] < d2_year
+        m1, m2 = d1.get('month'), d2_month
+        if m1 is None or m2 is None:
+            return True
+        if m1 != m2:
+            return m1 < m2
+        d1d, d2d = d1.get('day'), d2_day
+        if d1d is None or d2d is None:
+            return True
+        return d1d <= d2d
+
+
+    # Final published date - add when not present in Pure record - update
+    prefix = 'print' if crossref_record.print_year else 'issue'
+    fin_pub_dt = build_date(crossref_record, prefix)
+
+    if pure_record.print_year is None:
+        fin_upd_valid = bool(fin_pub_dt) and (
+            pure_record.online_year is None or
+            date_geq(fin_pub_dt, pure_record.online_year, pure_record.online_month, pure_record.online_day)
+        )
+        if fin_upd_valid:
+            update_list.append('add final pub dt')
+            pub_status_list.append(make_status_entry(
+                "/dk/atira/pure/researchoutput/status/published", "Published", fin_pub_dt
+            ))
+
+    elif (pure_record.print_year is not None and
+          fin_pub_dt.get('year') == pure_record.print_year):
+        cr_month = fin_pub_dt.get('month')
+        cr_day = fin_pub_dt.get('day')
+        if cr_month is not None:
+            for entry in pub_status_list:
+                if entry["publicationStatus"]["uri"] == "/dk/atira/pure/researchoutput/status/published":
+                    entry["publicationDate"]["month"] = cr_month
+                    update_list.append('update final pub month')
+                    entry["publicationDate"]["day"] = cr_day
+                    update_list.append('update final pub day')
+                    break
+
+    # Online published date - add when not present in Pure-record
+    if pure_record.online_year is None:
+        e_pub_dt = build_date(crossref_record, 'online')
+        e_upd_valid = bool(e_pub_dt) and (
+            pure_record.print_year is None or
+            date_leq(e_pub_dt, pure_record.print_year, pure_record.print_month, pure_record.print_day)
+        )
+        if e_upd_valid:
+            update_list.append('add e-pub dt')
+            pub_status_list.append(make_status_entry(
+                "/dk/atira/pure/researchoutput/status/epub", "E-pub ahead of print", e_pub_dt
+            ))
+
+    return json.dumps({"publicationStatuses": pub_status_list}, indent=4), update_list
             
 def set_keyword_update (pure_record, openalex_record, doaj_record):
 
@@ -692,7 +695,7 @@ scopus_api_key = settings.scopus_api_key
 
 #set uuids
 input_uuids = input('Enter one or more Pure RO UUIDs (comma separated, without spaces) : ')
-publ_uuids = input_uuids.split(",")
+publ_uuids = list(set(uuid.strip() for uuid in input_uuids.split(",")))
 
 #choose which data to update
 while True:
@@ -777,7 +780,7 @@ for n, publ_uuid in enumerate(publ_uuids):
     print ('scopus: ', scopus_record.status)
 
     #download openalex pdf
-    if openalex_record.prim_loc_pdf:
+    if openalex_record.prim_loc_pdf and update_ev == 'j':
         pdf_status = save_openalex_pdf (openalex_record.prim_loc_pdf, pure_record.doi, path_session)
     else:
         pdf_status = "none"
@@ -864,7 +867,7 @@ for n, publ_uuid in enumerate(publ_uuids):
             put_doi_log = response_put_doi.status_code
     else:
         put_doi_log = 'N/A'
-    print ('update ev-doi: ', put_doi_log)
+    print ('update electr v: ', put_doi_log)
 
     #update contribution section
     if scopus_record.status == 200 and update_contrib == 'y':
