@@ -22,17 +22,19 @@ def get_pure(UUID, base_url, crud_api_key):
      
 
 def get_journal_issn(journal_uuid, base_url, crud_api_key):
-    response_get_journal = requests.get(base_url+'/ws/api/journals/'+journal_uuid, headers={'Accept': 'application/json', 'Content-Type': 'application/json', 'api-key': crud_api_key})
-    json_pure_journal = response_get_journal.json()
+     response_get_journal = requests.get(base_url+'/ws/api/journals/'+journal_uuid, headers={'Accept': 'application/json', 'Content-Type': 'application/json', 'api-key': crud_api_key})
+     
+     json_pure_journal = response_get_journal.json()
     
-    if 'issns' in json_pure_journal:
+    
+     if 'issns' in json_pure_journal:
           issn_journal = json_pure_journal['issns'][0]['issn']
-    elif 'additionalSearchableIssns' in json_pure_journal:
+     elif 'additionalSearchableIssns' in json_pure_journal:
           issn_journal = json_pure_journal['additionalSearchableIssns'][0]['issn']
-    else:
+     else:
           issn_journal = None
     
-    return issn_journal
+     return issn_journal
 
 class getPure():
           
