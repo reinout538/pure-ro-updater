@@ -45,7 +45,7 @@ class getScopus():
         json_scopus = get_scopus(EID, scopus_api_key)[0]
         self.status = get_scopus(EID, scopus_api_key)[1]
 
-        if json_scopus is not None and any(key in json_scopus for key in ['item', 'authors', 'coredata', 'affiliation']):
+        if json_scopus is not None and all(key in json_scopus for key in ['item', 'authors', 'coredata', 'affiliation']):
             self.type = self.get_type(json_scopus)
             self.sub_type = self.get_subtype(json_scopus)
             self.pub_year = self.get_pub_date(json_scopus)[0]
