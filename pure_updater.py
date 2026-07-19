@@ -376,7 +376,7 @@ def create_scopus_contrib(pure_record, scopus_contrib, scopus_ext_org_df, scopus
                         else:
                             has_vu_affil = False
                         break #stop after match is found
-                row = [pure_record.uuid, pure_record.main_title, pure_record.sub_title, pure_record.managing_org, "", "", contributor['person']['uuid'], "", "", "", matched_sc_auth_lname, matched_sc_auth_fname, matched_sc_auth_auid, has_vu_affil]
+                row = [pure_record.uuid, pure_record.main_title, pure_record.sub_title, pure_record.pub_yr_first, pure_record.managing_org, "", "", contributor['person']['uuid'], "", "", "", "",matched_sc_auth_lname, matched_sc_auth_fname, matched_sc_auth_auid, has_vu_affil]
                 removed_persons.append(row)
                 
     #determine managing org - if no internal affiliations: MOU = VUA - else take first internal organisation of contributor section
@@ -665,6 +665,8 @@ def enrich_df_removed_persons (df_intern_person_removed, int_person_df):
         df_intern_person_removed.loc[index_no, 'person lname'] = int_person_df.loc[int_person_df['person_uuid'] == person_uuid, 'default_lname'].values[0]
         df_intern_person_removed.loc[index_no, 'person fname'] = int_person_df.loc[int_person_df['person_uuid'] == person_uuid, 'knownas_fname'].values[0]
         df_intern_person_removed.loc[index_no, 'person initials'] = int_person_df.loc[int_person_df['person_uuid'] == person_uuid, 'default_fname'].values[0]
+        df_intern_person_removed.loc[index_no, 'affil end date'] = int_person_df.loc[int_person_df['person_uuid'] == person_uuid, 'affil_last_dt'].values[0]
+        
         
         #get name of managing organisation via API
         response_org = requests.get(base_url+'/ws/api/organizations/'+uuid_man_org, headers={'Accept': 'application/json', 'Content-Type': 'application/json', 'api-key': crud_api_key})
@@ -729,7 +731,7 @@ df_oa_values = pd.DataFrame(columns=['uuid', 'pure_id', 'doi', 'journal_issn', '
 df_crossref = pd.DataFrame(columns=['status-code', 'doi', 'type', 'publisher', 'license-list', 'created_pub_year', 'created_pub_month', 'created_pub_day', 'print_pub_year', 'print_pub_month', 'print_pub_day', 'online_pub_year', 'online_pub_month', 'online_pub_day', 'issued_pub_year', 'issued_pub_month', 'issued_pub_day', 'issue_pub_year', 'issue_pub_month', 'issue_pub_day', 'indexed_year', 'indexed_month', 'indexed_day'])
 df_openalex = pd.DataFrame(columns=['openalex.id', 'doi', 'pub_year', 'pub_date', 'pub_month', 'pub_day', 'main_title', 'sub_title', 'oa_status', 'prim_loc_landing', 'prim_loc_pdf', 'prim_loc_is_oa', 'prim_loc_in_doaj', 'prim_loc_license', 'prim_loc_version', 'green_url_landing', 'vor_pdf_url', 'vor_pdf_license' ,'pmc_loc_landing', 'pmc_loc_pdf', 'pmc_loc_is_oa', 'pmc_loc_license', 'pmc_loc_version', 'journal', 'issn', 'volume', 'issue', 'first_page', 'last_page'])
 df_scopus_auth_not_in_pure = pd.DataFrame(columns=['au-id', 'au-surnm', 'au-fname', 'af-ids'])
-df_intern_person_removed = pd.DataFrame(columns=['publ uuid', 'title', 'sub-title', 'man org uuid', 'man org name', 'affil org name', 'person uuid', 'person lname', 'person fname', 'person initials', 'scopus lname', 'scopus fname', 'scopus AU-ID', 'has VU-affil'])
+df_intern_person_removed = pd.DataFrame(columns=['publ uuid', 'title', 'sub-title', 'publ yar', 'man org uuid', 'man org name', 'affil org name', 'person uuid', 'person lname', 'person fname', 'person initials', 'affil end date', 'scopus lname', 'scopus fname', 'scopus AU-ID', 'has VU-affil'])
 
 #create session log directory
 file_dir = sys.path[0]
@@ -832,7 +834,7 @@ for n, publ_uuid in enumerate(publ_uuids):
         #log json
         open(os.path.join(path_pub, f"{publ_uuid}_publ_status_upd.json"), 'w').write(publ_status_upd_json)
         #write
-        response_put_publ_status = requests.put(base_url+'/ws/api/research-outputs/'+publ_uuid, data = publ_status_upd_json, headers={'Accept': 'application/json', 'Content-Type': 'application/json', 'api-key': crud_api_key})
+        response_put_publ_status = requests.put(base_url+'/ws/api/research-outputs/'+publ_uuid, data = publ_status_upd_json, headers={'Accept': 'application/json', 'Content-Type': 'application/json', 'api-key': crud_api_key}, timeout=(5, 30))
         if response_put_publ_status.ok:
             put_publ_status_log = publ_status_upd_list
         else:
@@ -846,7 +848,7 @@ for n, publ_uuid in enumerate(publ_uuids):
         #log json
         open(os.path.join(path_pub, f"{publ_uuid}_keyw_upd.json"), 'w').write(keyw_upd_json)
         #write
-        response_put_keyw = requests.put(base_url+'/ws/api/research-outputs/'+publ_uuid, data = keyw_upd_json, headers={'Accept': 'application/json', 'Content-Type': 'application/json', 'api-key': crud_api_key})
+        response_put_keyw = requests.put(base_url+'/ws/api/research-outputs/'+publ_uuid, data = keyw_upd_json, headers={'Accept': 'application/json', 'Content-Type': 'application/json', 'api-key': crud_api_key}, timeout=(5, 30))
         if response_put_keyw.ok:
             put_keyw_log = keyw_upd_list
         else:
@@ -860,7 +862,7 @@ for n, publ_uuid in enumerate(publ_uuids):
         #log json
         open(os.path.join(path_pub, f"{publ_uuid}_ev_upd.json"), 'w').write(ev_upd_json)
         #write
-        response_put_doi = requests.put(base_url+'/ws/api/research-outputs/'+publ_uuid, data = ev_upd_json, headers={'Accept': 'application/json', 'Content-Type': 'application/json', 'api-key': crud_api_key})
+        response_put_doi = requests.put(base_url+'/ws/api/research-outputs/'+publ_uuid, data = ev_upd_json, headers={'Accept': 'application/json', 'Content-Type': 'application/json', 'api-key': crud_api_key}, timeout=(5, 30))
         if response_put_doi.ok:
             put_doi_log = ev_upd_list
         else:
@@ -873,7 +875,7 @@ for n, publ_uuid in enumerate(publ_uuids):
     if scopus_record.status == 200 and update_contrib == 'y':
         open(os.path.join(path_pub, f"{publ_uuid}_contrib_upd.json"), 'w').write(contrib_upd_json)
         #write
-        response_put_contrib = requests.put(base_url+'/ws/api/research-outputs/'+publ_uuid, data = contrib_upd_json, headers={'Accept': 'application/json', 'Content-Type': 'application/json', 'api-key': crud_api_key})
+        response_put_contrib = requests.put(base_url+'/ws/api/research-outputs/'+publ_uuid, data = contrib_upd_json, headers={'Accept': 'application/json', 'Content-Type': 'application/json', 'api-key': crud_api_key}, timeout=(5, 30))
         put_contrib_log = response_put_contrib.status_code
         if response_put_contrib.status_code != 200:
             print (response_put_contrib.text)
@@ -886,7 +888,7 @@ for n, publ_uuid in enumerate(publ_uuids):
     #update ro-identifiers (OpenAlex ID)
     if identif_upd_json != None:
         open(os.path.join(path_pub, f"{publ_uuid}_identif_upd.json"), 'w').write(identif_upd_json)
-        response_put_identif = requests.put(base_url+'/ws/api/research-outputs/'+publ_uuid, data = identif_upd_json, headers={'Accept': 'application/json', 'Content-Type': 'application/json', 'api-key': crud_api_key})
+        response_put_identif = requests.put(base_url+'/ws/api/research-outputs/'+publ_uuid, data = identif_upd_json, headers={'Accept': 'application/json', 'Content-Type': 'application/json', 'api-key': crud_api_key}, timeout=(5, 30))
         put_identif_log = response_put_identif.status_code
     else:
         put_identif_log = 'N/A'
@@ -898,7 +900,7 @@ for n, publ_uuid in enumerate(publ_uuids):
     "uuid": man_org_contrib_upd}})
     
     if pure_record.workflow != 'approved' and update_contrib == 'y':
-        response_put_mou = requests.put(base_url+'/ws/api/research-outputs/'+publ_uuid, data = upd_mou_vu, headers={'Accept': 'application/json', 'Content-Type': 'application/json', 'api-key': crud_api_key})
+        response_put_mou = requests.put(base_url+'/ws/api/research-outputs/'+publ_uuid, data = upd_mou_vu, headers={'Accept': 'application/json', 'Content-Type': 'application/json', 'api-key': crud_api_key}, timeout=(5, 30))
         print(response_put_mou.status_code)
         print ('update mou')
     else:
