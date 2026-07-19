@@ -22,17 +22,19 @@ def get_pure(UUID, base_url, crud_api_key):
      
 
 def get_journal_issn(journal_uuid, base_url, crud_api_key):
-    response_get_journal = requests.get(base_url+'/ws/api/journals/'+journal_uuid, headers={'Accept': 'application/json', 'Content-Type': 'application/json', 'api-key': crud_api_key})
-    json_pure_journal = response_get_journal.json()
+     response_get_journal = requests.get(base_url+'/ws/api/journals/'+journal_uuid, headers={'Accept': 'application/json', 'Content-Type': 'application/json', 'api-key': crud_api_key})
+     
+     json_pure_journal = response_get_journal.json()
     
-    if 'issns' in json_pure_journal:
+    
+     if 'issns' in json_pure_journal:
           issn_journal = json_pure_journal['issns'][0]['issn']
-    elif 'additionalSearchableIssns' in json_pure_journal:
+     elif 'additionalSearchableIssns' in json_pure_journal:
           issn_journal = json_pure_journal['additionalSearchableIssns'][0]['issn']
-    else:
+     else:
           issn_journal = None
     
-    return issn_journal
+     return issn_journal
 
 class getPure():
           
@@ -72,6 +74,7 @@ class getPure():
              self.keyw_list = self.get_keyw(json_pure_pub)[0]
              self.class_keyw = self.get_keyw(json_pure_pub)[1]
              self.journal_uuid = json_pure_pub.get('journalAssociation', {}).get('journal', {}).get('uuid')
+             self.abstract = json_pure_pub.get('abstract', {}).get('en_GB')
              if self.journal_uuid != None:
                   self.journal_issn = get_journal_issn(self.journal_uuid, base_url, crud_api_key)
              else:
@@ -81,7 +84,7 @@ class getPure():
              self.scopus_eid = self.get_identifiers (json_pure_pub)[1]
                
           else:
-             self.pure_id = self.type = self.category = self.peer_review = self.electr_versions = self.curr_pub_status = self.print_year = self.print_month = self.print_day = self.online_year = self.online_month = self.online_day = self.managing_org = self.doi = self.doi_index = self.doi_access = self.doi_license = self.keyw_list = self.class_keyw = self.journal_uuid = self.journal_issn = self.workflow = self.identifiers = self.scopus_eid = None     
+             self.pure_id = self.type = self.category = self.peer_review = self.electr_versions = self.curr_pub_status = self.print_year = self.print_month = self.print_day = self.online_year = self.online_month = self.online_day = self.managing_org = self.doi = self.doi_index = self.doi_access = self.doi_license = self.keyw_list = self.class_keyw = self.journal_uuid = self.journal_issn = self.workflow = self.identifiers = self.scopus_eid = self.abstract = None
                
                
      def get_pub_dt(self, json_pure_pub):
@@ -187,12 +190,11 @@ class getPure():
 #try it out
 
 publ_uuids = ["63c847c0-5f62-420d-b6ef-d55da7412840", "fb6105ab-5c35-4b01-979a-7ca1a053c7cb", "007f7652-c50a-4a89-bed4-20a91b191e10", "01f044ea-a1e2-432a-919a-e68114455fed", "879f49e6-327a-4925-8b2d-25fc07a035dd", "dfd76440-86a0-454c-a6c1-5bfced62958d", "6a5c96ea-6254-4613-a3e3-241bf1fc713d", "240c9aa4-3789-407c-8140-018362c9db15", "b13a2472-5558-4755-904d-4986d6c2f3dc", "4672d34a-0f08-44c7-b23b-281ffebf4faf", "a50e12e1-326e-4779-a9c0-263ab0a584ed", "987af3f3-ef55-487b-af5f-6ee27ef48b47", "4ba2d349-162f-4fd4-ab9f-94e2380603e5", "2fe848d0-37e9-4a91-acc6-ea0dee6d260f", "c8ebb025-4554-4721-a6b2-7106213f506b", "a9771c8b-0f03-4934-b15c-2ff1a1c8ac66", "06784eec-62d8-4c23-b0f7-7341bfc910d9", "2591aabf-b33b-41ad-9867-dede421e0e25", "e829d1cc-8045-459b-b7eb-3559b5aed432", "9d8a7c43-8e09-4789-8983-ebb50bd52c57", "66490884-d8b3-4bb2-8b65-5c49c5a6693f", "8ac81b3c-a2cc-4b3f-be35-ef31440f5748", "5dec8570-fc36-4fac-b34f-0e0f476c7b63", "f1947839-8f30-4e16-a59c-96ff6942aba9", "3d858e11-98df-484c-bde9-72f736fde9b0", "307e4815-6eed-491f-8c5f-dd0e6e0146a4", "13900743-68ca-4469-93c2-f33a756b79db", "49fa94bf-7f42-47b4-9d6c-663f7b526ee2", "8f31a7eb-188f-474c-b137-90fdae16e8e3", "daacb112-c5f9-45bc-bb64-bc7ad18685b3", "9758d349-625c-4d4d-8a9d-8209df5accd1", "b035258f-4067-4b31-a60f-7635c280dbd2", "93d0adc7-9c7c-4f98-9a2c-532995a5a159", "0a3074aa-96ce-4dfe-b783-4b95e58e9593", "3337c575-44d3-4f72-be5b-a0a065956172", "7007706e-8797-4b3d-b8a2-bf31bf9e842d", "7d27008a-a119-41ff-9d9c-18bd4379312a", "d2f86b5c-08f8-47be-bb9c-55eb5f1e5b2b", "979aa728-2daa-4441-b4c7-0f17772388d2", "4a39eaee-4edb-4f95-a8d1-130184062fbb", "9d49face-1169-4435-915c-a9303a550b5f", "d2b1dc27-81ed-441c-9311-05944acb6351", "63e3a5b4-a0e1-40c3-8254-af60c401924b", "009c4ffb-d409-4ce4-8eb0-844b91dc180f", "c9af03a7-b549-4dfa-a209-21abfd09cf6c", "da818672-6e93-4b72-80ca-b224b557a4dc", "81908980-3c44-4d0e-a3a1-58b782746b7b", "6956bcb7-59ac-4c84-9614-d1e5994a66e9", "bc6d6462-9c36-48e3-88d1-f4fea1460c9e", "09f2ef54-b325-4aaf-8501-dc2782ba4c25", "a18fb287-0126-40ff-b48d-aa3916eeb886", "2d2d9c4e-7ba5-4555-966c-ff65f429f641", "c1d21b2f-5793-4982-b885-bf1577dc3ee7", "dd37a2a3-a99e-41ca-a6c1-5b22a04d6deb", "02466c02-93c5-4b03-b9a9-fd42ca4d041f", "805521e5-cc86-4932-83f6-414191d925b0", "e71b183f-8af2-451b-bb91-cee126ec3d61", "dc1c57c3-8cac-4359-b4af-ea51696c75a2", "27cee517-f376-47b3-bd60-69c5cec8c93e"]
-publ_uuids = ["747a281d-f48c-483b-bf64-015e014dee19"]
+publ_uuids = ["3d345083-b812-4b77-953a-122603a027a4", "31278f86-6be1-4d78-9dfe-21570580dacb", "dc0b7a47-5bb5-40ce-9ba5-583715c8596b"]
 
 for UUID in publ_uuids:
 
-     pure = getPure(UUID, "https://research.vu.nl", "[api-key crud]")
-     print (pure.template)
-
-
+     pure = getPure(UUID, "https://research.accept.vu.nl", "876e35f5-d9b5-4287-a77e-fff919e83da8")
+     print (pure.abstract)
+     print (pure.status)
 """

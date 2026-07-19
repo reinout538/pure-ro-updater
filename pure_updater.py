@@ -376,7 +376,7 @@ def create_scopus_contrib(pure_record, scopus_contrib, scopus_ext_org_df, scopus
                         else:
                             has_vu_affil = False
                         break #stop after match is found
-                row = [pure_record.uuid, pure_record.main_title, pure_record.sub_title, pure_record.managing_org, "", "", contributor['person']['uuid'], "", "", "", matched_sc_auth_lname, matched_sc_auth_fname, matched_sc_auth_auid, has_vu_affil]
+                row = [pure_record.uuid, pure_record.main_title, pure_record.sub_title, pure_record.pub_yr_first, pure_record.managing_org, "", "", contributor['person']['uuid'], "", "", "", "",matched_sc_auth_lname, matched_sc_auth_fname, matched_sc_auth_auid, has_vu_affil]
                 removed_persons.append(row)
                 
     #determine managing org - if no internal affiliations: MOU = VUA - else take first internal organisation of contributor section
@@ -386,95 +386,98 @@ def create_scopus_contrib(pure_record, scopus_contrib, scopus_ext_org_df, scopus
         man_org = int_org_list_json[0]['uuid']
     return contrib_upd, removed_persons, man_org
 
-def set_publ_status_update (pure_record, crossref_record):
-
-    #add final published date crossref if N/A in pure
+def set_publ_status_update(pure_record, crossref_record):
     pub_status_list = pure_record.json["publicationStatuses"]
     update_list = []
-    fin_pub_dt = e_pub_dt = {}
-    
-    if pure_record.print_year == None:
-        if crossref_record.print_year != None:
-            fin_pub_dt['year'] = crossref_record.print_year
-            if crossref_record.print_month != None:
-                fin_pub_dt['month'] = crossref_record.print_month
-            if crossref_record.print_day != None:
-                fin_pub_dt['day'] = crossref_record.print_day
-        elif crossref_record.issue_year != None:
-            fin_pub_dt['year'] = crossref_record.issue_year
-            if crossref_record.issue_month != None:
-                fin_pub_dt['month'] = crossref_record.issue_month
-            if crossref_record.issue_day != None:
-                fin_pub_dt['day'] = crossref_record.issue_day
-        else:
-            pass
-    else:
-        pass
 
-    #check if final publ status update is valid:
-    if fin_pub_dt != {}:
-        if pure_record.online_year != None:
-            if fin_pub_dt['year'] >= pure_record.online_year:
-                fin_upd_valid = 'true'
-            else:
-                fin_upd_valid = 'false'
-        else:
-            fin_upd_valid = 'true'
-    else:
-        fin_upd_valid = 'false'
+    def build_date(src, prefix):
+        year = getattr(src, f'{prefix}_year')
+        if year is None:
+            return {}
+        date = {'year': year}
+        for part in ('month', 'day'):
+            val = getattr(src, f'{prefix}_{part}')
+            if val is not None:
+                date[part] = val
+        return date
 
-    if fin_upd_valid == 'true'and pure_record.print_year == None:
-        update_list.append('add final pub dt')
-        pub_status_list.append({     
-                      "publicationStatus": {
-                        "uri": "/dk/atira/pure/researchoutput/status/published",
-                        "term": {
-                          "en_GB": "Published"
-                        }
-                      },
-                      "publicationDate": fin_pub_dt
-                    })
-       
-    #add online published date crossref if N/A in pure
-    if pure_record.online_year == None:
-        if crossref_record.online_year != None:
-            e_pub_dt['year'] = crossref_record.online_year
-            if crossref_record.online_month != None:
-                e_pub_dt['month'] = crossref_record.online_month
-            if crossref_record.online_day != None:
-                e_pub_dt['day'] = crossref_record.online_day
-        else:
-            pass
-    else:
-        pass
-   
-    #check if online publ status update is valid:
-    if e_pub_dt != {}:
-        if pure_record.print_year != None:
-            if e_pub_dt['year'] <= pure_record.print_year:
-                e_upd_valid = 'true'
-            else:
-                e_upd_valid = 'false'
-        else:
-            e_upd_valid = 'true'
-    else:
-        e_upd_valid = 'false'
-    
-    if e_upd_valid == 'true' and pure_record.online_year == None:
-        update_list.append('add e-pub dt')
-        pub_status_list.append({     
-                      "publicationStatus": {
-                        "uri": "/dk/atira/pure/researchoutput/status/epub",
-                        "term": {
-                          "en_GB": "E-pub ahead of print"
-                        }
-                      },
-                      "publicationDate": e_pub_dt
-                    })
-    
-    pub_status_upd = (json.dumps({"publicationStatuses" : pub_status_list}, indent =4))
-    
-    return pub_status_upd, update_list
+    def make_status_entry(uri, term_label, date):
+        return {
+            "publicationStatus": {"uri": uri, "term": {"en_GB": term_label}},
+            "publicationDate": date
+        }
+
+    def date_geq(d1, d2_year, d2_month, d2_day):
+        """Return True if date dict d1 >= d2 (year/month/day), comparing only available parts."""
+        if d1['year'] != d2_year:
+            return d1['year'] > d2_year
+        m1, m2 = d1.get('month'), d2_month
+        if m1 is None or m2 is None:
+            return True
+        if m1 != m2:
+            return m1 > m2
+        d1d, d2d = d1.get('day'), d2_day
+        if d1d is None or d2d is None:
+            return True
+        return d1d >= d2d
+
+    def date_leq(d1, d2_year, d2_month, d2_day):
+        """Return True if date dict d1 <= d2 (year/month/day), comparing only available parts."""
+        if d1['year'] != d2_year:
+            return d1['year'] < d2_year
+        m1, m2 = d1.get('month'), d2_month
+        if m1 is None or m2 is None:
+            return True
+        if m1 != m2:
+            return m1 < m2
+        d1d, d2d = d1.get('day'), d2_day
+        if d1d is None or d2d is None:
+            return True
+        return d1d <= d2d
+
+
+    # Final published date - add when not present in Pure record - update
+    prefix = 'print' if crossref_record.print_year else 'issue'
+    fin_pub_dt = build_date(crossref_record, prefix)
+
+    if pure_record.print_year is None:
+        fin_upd_valid = bool(fin_pub_dt) and (
+            pure_record.online_year is None or
+            date_geq(fin_pub_dt, pure_record.online_year, pure_record.online_month, pure_record.online_day)
+        )
+        if fin_upd_valid:
+            update_list.append('add final pub dt')
+            pub_status_list.append(make_status_entry(
+                "/dk/atira/pure/researchoutput/status/published", "Published", fin_pub_dt
+            ))
+
+    elif (pure_record.print_year is not None and
+          fin_pub_dt.get('year') == pure_record.print_year):
+        cr_month = fin_pub_dt.get('month')
+        cr_day = fin_pub_dt.get('day')
+        if cr_month is not None:
+            for entry in pub_status_list:
+                if entry["publicationStatus"]["uri"] == "/dk/atira/pure/researchoutput/status/published":
+                    entry["publicationDate"]["month"] = cr_month
+                    update_list.append('update final pub month')
+                    entry["publicationDate"]["day"] = cr_day
+                    update_list.append('update final pub day')
+                    break
+
+    # Online published date - add when not present in Pure-record
+    if pure_record.online_year is None:
+        e_pub_dt = build_date(crossref_record, 'online')
+        e_upd_valid = bool(e_pub_dt) and (
+            pure_record.print_year is None or
+            date_leq(e_pub_dt, pure_record.print_year, pure_record.print_month, pure_record.print_day)
+        )
+        if e_upd_valid:
+            update_list.append('add e-pub dt')
+            pub_status_list.append(make_status_entry(
+                "/dk/atira/pure/researchoutput/status/epub", "E-pub ahead of print", e_pub_dt
+            ))
+
+    return json.dumps({"publicationStatuses": pub_status_list}, indent=4), update_list
             
 def set_keyword_update (pure_record, openalex_record, doaj_record):
 
@@ -555,7 +558,7 @@ def set_keyword_update (pure_record, openalex_record, doaj_record):
     return keyw_upd, update_list, oa_unl_value, unl_status
 
 
-def set_ev_update (pure_record, openalex_record):
+def set_ev_update (pure_record, openalex_record, unl_status):
 
     ev_list = pure_record.electr_versions
     update_list = []
@@ -565,8 +568,14 @@ def set_ev_update (pure_record, openalex_record):
     if pure_record.doi != None:
         ev_list[pure_record.doi_index]['doi'] = pure_record.doi
         if (pure_record.doi_license == None or pure_record.doi_license == unspecified['uri']) and openalex_record.prim_loc_license != None:
-            ev_list[pure_record.doi_index]['licenseType'] = cc_upw2pure[openalex_record.prim_loc_license]
-            update_list.append('add doi-license')
+            #try to map openalex license to pure license
+            try:
+                pure_license = cc_upw2pure[openalex_record.prim_loc_license]
+                ev_list[pure_record.doi_index]['licenseType'] = pure_license
+                update_list.append('add doi-license')
+            except:
+                pure_license = None
+            
         if pure_record.doi_access == ev_status_unknown['uri'] and openalex_record.oa_status in ['diamond', 'gold', 'hybrid']:
             ev_list[pure_record.doi_index]['accessType'] = ev_status_open
             update_list.append('add doi-access-status')
@@ -593,14 +602,13 @@ def set_ev_update (pure_record, openalex_record):
           "typeDiscriminator": "LinkElectronicVersion",
           "accessType": ev_status_open,
           "link": openalex_record.pmc_loc_landing})
-    
-    elif openalex_record.green_url_landing != None and openalex_record.green_url_landing not in url_list:
+    #add link to other repository found in openalex if publication is not already gold OA
+    elif openalex_record.green_url_landing != None and openalex_record.green_url_landing not in url_list and unl_status not in [oa_a['uri'], oa_b['uri']]:
         update_list.append('add repos-link acc')
         ev_list.append({
               "typeDiscriminator": "LinkElectronicVersion",
               "accessType": ev_status_open,
-              "link": openalex_record.green_url_landing,
-              "versionType": ev_version_accepted})
+              "link": openalex_record.green_url_landing})
 
                        
     ev_upd =(json.dumps({"electronicVersions" : ev_list}, indent = 4))
@@ -657,6 +665,8 @@ def enrich_df_removed_persons (df_intern_person_removed, int_person_df):
         df_intern_person_removed.loc[index_no, 'person lname'] = int_person_df.loc[int_person_df['person_uuid'] == person_uuid, 'default_lname'].values[0]
         df_intern_person_removed.loc[index_no, 'person fname'] = int_person_df.loc[int_person_df['person_uuid'] == person_uuid, 'knownas_fname'].values[0]
         df_intern_person_removed.loc[index_no, 'person initials'] = int_person_df.loc[int_person_df['person_uuid'] == person_uuid, 'default_fname'].values[0]
+        df_intern_person_removed.loc[index_no, 'affil end date'] = int_person_df.loc[int_person_df['person_uuid'] == person_uuid, 'affil_last_dt'].values[0]
+        
         
         #get name of managing organisation via API
         response_org = requests.get(base_url+'/ws/api/organizations/'+uuid_man_org, headers={'Accept': 'application/json', 'Content-Type': 'application/json', 'api-key': crud_api_key})
@@ -687,12 +697,12 @@ scopus_api_key = settings.scopus_api_key
 
 #set uuids
 input_uuids = input('Enter one or more Pure RO UUIDs (comma separated, without spaces) : ')
-publ_uuids = input_uuids.split(",")
+publ_uuids = list(set(uuid.strip() for uuid in input_uuids.split(",")))
 
 #choose which data to update
 while True:
-    update_contrib = input('Update contributor section - y/n?: ').lower()
-    if update_contrib and update_contrib[0] in ('y', 'n'):
+    update_contrib = input('Update contributor section - y/n/d(dryrun)?: ').lower()
+    if update_contrib and update_contrib[0] in ('y', 'n', 'd'):
         break
     print("You have to choose Y or N.")
 
@@ -721,7 +731,7 @@ df_oa_values = pd.DataFrame(columns=['uuid', 'pure_id', 'doi', 'journal_issn', '
 df_crossref = pd.DataFrame(columns=['status-code', 'doi', 'type', 'publisher', 'license-list', 'created_pub_year', 'created_pub_month', 'created_pub_day', 'print_pub_year', 'print_pub_month', 'print_pub_day', 'online_pub_year', 'online_pub_month', 'online_pub_day', 'issued_pub_year', 'issued_pub_month', 'issued_pub_day', 'issue_pub_year', 'issue_pub_month', 'issue_pub_day', 'indexed_year', 'indexed_month', 'indexed_day'])
 df_openalex = pd.DataFrame(columns=['openalex.id', 'doi', 'pub_year', 'pub_date', 'pub_month', 'pub_day', 'main_title', 'sub_title', 'oa_status', 'prim_loc_landing', 'prim_loc_pdf', 'prim_loc_is_oa', 'prim_loc_in_doaj', 'prim_loc_license', 'prim_loc_version', 'green_url_landing', 'vor_pdf_url', 'vor_pdf_license' ,'pmc_loc_landing', 'pmc_loc_pdf', 'pmc_loc_is_oa', 'pmc_loc_license', 'pmc_loc_version', 'journal', 'issn', 'volume', 'issue', 'first_page', 'last_page'])
 df_scopus_auth_not_in_pure = pd.DataFrame(columns=['au-id', 'au-surnm', 'au-fname', 'af-ids'])
-df_intern_person_removed = pd.DataFrame(columns=['publ uuid', 'title', 'sub-title', 'man org uuid', 'man org name', 'affil org name', 'person uuid', 'person lname', 'person fname', 'person initials', 'scopus lname', 'scopus fname', 'scopus AU-ID', 'has VU-affil'])
+df_intern_person_removed = pd.DataFrame(columns=['publ uuid', 'title', 'sub-title', 'publ yar', 'man org uuid', 'man org name', 'affil org name', 'person uuid', 'person lname', 'person fname', 'person initials', 'affil end date', 'scopus lname', 'scopus fname', 'scopus AU-ID', 'has VU-affil'])
 
 #create session log directory
 file_dir = sys.path[0]
@@ -732,7 +742,8 @@ while os.path.exists(path_session) == True:
     path_session = f"{os.path.join(file_dir, 'log_files', str(datetime.datetime.now().strftime('%Y-%m-%d')))}_{str(path_session_add)}"
 os.makedirs (path_session)
 #get internal person records from Pure as df
-int_person_df = get_pure_internal_persons(base_url, api_524_key)[5]
+if update_contrib != 'n':
+    int_person_df = get_pure_internal_persons(base_url, api_524_key)[5]
 
 #loop through uuids
 for n, publ_uuid in enumerate(publ_uuids):
@@ -747,7 +758,8 @@ for n, publ_uuid in enumerate(publ_uuids):
     #get pure publication record
     pure_record = getPure(publ_uuid, base_url, crud_api_key)
     print ('get pure record: ', pure_record.status)
-
+    if pure_record.status != 200:
+        continue
     #log json record before updates
     open(os.path.join(path_pub, f"{publ_uuid}_before.json"), 'w').write(json.dumps(pure_record.json, indent = 4))
     
@@ -770,7 +782,7 @@ for n, publ_uuid in enumerate(publ_uuids):
     print ('scopus: ', scopus_record.status)
 
     #download openalex pdf
-    if openalex_record.prim_loc_pdf:
+    if openalex_record.prim_loc_pdf and update_ev == 'j':
         pdf_status = save_openalex_pdf (openalex_record.prim_loc_pdf, pure_record.doi, path_session)
     else:
         pdf_status = "none"
@@ -779,7 +791,7 @@ for n, publ_uuid in enumerate(publ_uuids):
 
     #RUN FUNCTIONS TO CREATE JSON UPDATES FOR PURE
     
-    if scopus_record.status == 200:
+    if update_contrib != 'n' and scopus_record.status == 200 and scopus_record.contrib is not []:
         #analyze scopus contributor section against dataframe of all internal pure-person records
         scopus_analysis = analyze_scopus_contrib(scopus_record, int_person_df)
         scopus_contrib = scopus_analysis[0]
@@ -804,8 +816,9 @@ for n, publ_uuid in enumerate(publ_uuids):
     keyw_upd = set_keyword_update (pure_record, openalex_record, doaj_record)
     keyw_upd_json = keyw_upd[0]
     keyw_upd_list = keyw_upd[1]
+    unl_status = keyw_upd[3]
     
-    ev_upd = set_ev_update (pure_record, openalex_record)
+    ev_upd = set_ev_update (pure_record, openalex_record, unl_status)
     ev_upd_json = ev_upd[0]
     ev_upd_list = ev_upd[1]
 
@@ -821,7 +834,7 @@ for n, publ_uuid in enumerate(publ_uuids):
         #log json
         open(os.path.join(path_pub, f"{publ_uuid}_publ_status_upd.json"), 'w').write(publ_status_upd_json)
         #write
-        response_put_publ_status = requests.put(base_url+'/ws/api/research-outputs/'+publ_uuid, data = publ_status_upd_json, headers={'Accept': 'application/json', 'Content-Type': 'application/json', 'api-key': crud_api_key})
+        response_put_publ_status = requests.put(base_url+'/ws/api/research-outputs/'+publ_uuid, data = publ_status_upd_json, headers={'Accept': 'application/json', 'Content-Type': 'application/json', 'api-key': crud_api_key}, timeout=(5, 30))
         if response_put_publ_status.ok:
             put_publ_status_log = publ_status_upd_list
         else:
@@ -835,7 +848,7 @@ for n, publ_uuid in enumerate(publ_uuids):
         #log json
         open(os.path.join(path_pub, f"{publ_uuid}_keyw_upd.json"), 'w').write(keyw_upd_json)
         #write
-        response_put_keyw = requests.put(base_url+'/ws/api/research-outputs/'+publ_uuid, data = keyw_upd_json, headers={'Accept': 'application/json', 'Content-Type': 'application/json', 'api-key': crud_api_key})
+        response_put_keyw = requests.put(base_url+'/ws/api/research-outputs/'+publ_uuid, data = keyw_upd_json, headers={'Accept': 'application/json', 'Content-Type': 'application/json', 'api-key': crud_api_key}, timeout=(5, 30))
         if response_put_keyw.ok:
             put_keyw_log = keyw_upd_list
         else:
@@ -849,20 +862,20 @@ for n, publ_uuid in enumerate(publ_uuids):
         #log json
         open(os.path.join(path_pub, f"{publ_uuid}_ev_upd.json"), 'w').write(ev_upd_json)
         #write
-        response_put_doi = requests.put(base_url+'/ws/api/research-outputs/'+publ_uuid, data = ev_upd_json, headers={'Accept': 'application/json', 'Content-Type': 'application/json', 'api-key': crud_api_key})
+        response_put_doi = requests.put(base_url+'/ws/api/research-outputs/'+publ_uuid, data = ev_upd_json, headers={'Accept': 'application/json', 'Content-Type': 'application/json', 'api-key': crud_api_key}, timeout=(5, 30))
         if response_put_doi.ok:
             put_doi_log = ev_upd_list
         else:
             put_doi_log = response_put_doi.status_code
     else:
         put_doi_log = 'N/A'
-    print ('update ev-doi: ', put_doi_log)
+    print ('update electr v: ', put_doi_log)
 
     #update contribution section
     if scopus_record.status == 200 and update_contrib == 'y':
         open(os.path.join(path_pub, f"{publ_uuid}_contrib_upd.json"), 'w').write(contrib_upd_json)
         #write
-        response_put_contrib = requests.put(base_url+'/ws/api/research-outputs/'+publ_uuid, data = contrib_upd_json, headers={'Accept': 'application/json', 'Content-Type': 'application/json', 'api-key': crud_api_key})
+        response_put_contrib = requests.put(base_url+'/ws/api/research-outputs/'+publ_uuid, data = contrib_upd_json, headers={'Accept': 'application/json', 'Content-Type': 'application/json', 'api-key': crud_api_key}, timeout=(5, 30))
         put_contrib_log = response_put_contrib.status_code
         if response_put_contrib.status_code != 200:
             print (response_put_contrib.text)
@@ -875,7 +888,7 @@ for n, publ_uuid in enumerate(publ_uuids):
     #update ro-identifiers (OpenAlex ID)
     if identif_upd_json != None:
         open(os.path.join(path_pub, f"{publ_uuid}_identif_upd.json"), 'w').write(identif_upd_json)
-        response_put_identif = requests.put(base_url+'/ws/api/research-outputs/'+publ_uuid, data = identif_upd_json, headers={'Accept': 'application/json', 'Content-Type': 'application/json', 'api-key': crud_api_key})
+        response_put_identif = requests.put(base_url+'/ws/api/research-outputs/'+publ_uuid, data = identif_upd_json, headers={'Accept': 'application/json', 'Content-Type': 'application/json', 'api-key': crud_api_key}, timeout=(5, 30))
         put_identif_log = response_put_identif.status_code
     else:
         put_identif_log = 'N/A'
@@ -887,7 +900,7 @@ for n, publ_uuid in enumerate(publ_uuids):
     "uuid": man_org_contrib_upd}})
     
     if pure_record.workflow != 'approved' and update_contrib == 'y':
-        response_put_mou = requests.put(base_url+'/ws/api/research-outputs/'+publ_uuid, data = upd_mou_vu, headers={'Accept': 'application/json', 'Content-Type': 'application/json', 'api-key': crud_api_key})
+        response_put_mou = requests.put(base_url+'/ws/api/research-outputs/'+publ_uuid, data = upd_mou_vu, headers={'Accept': 'application/json', 'Content-Type': 'application/json', 'api-key': crud_api_key}, timeout=(5, 30))
         print(response_put_mou.status_code)
         print ('update mou')
     else:
@@ -906,7 +919,8 @@ for n, publ_uuid in enumerate(publ_uuids):
 
     df_log.to_csv(os.path.join(path_session, "operations_log.csv"), encoding='utf-8', index = False)
 
-enrich_df_removed_persons (df_intern_person_removed, int_person_df)
+if update_contrib != 'n':
+    enrich_df_removed_persons (df_intern_person_removed, int_person_df)
 
 #write operations log
 df_log.to_csv(os.path.join(path_session, "operations_log.csv"), encoding='utf-8', index = False)
