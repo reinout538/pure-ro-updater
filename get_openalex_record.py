@@ -48,7 +48,8 @@ def get_openalex(DOI, max_retries=5):
                 continue
 
             # Client error - don't retry
-            response.raise_for_status()
+            json_openalex = None
+            return (json_openalex, response_openalex.status_code)
 
         except requests.exceptions.Timeout:
             if attempt < max_retries - 1:
