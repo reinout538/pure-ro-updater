@@ -4,7 +4,7 @@ import pandas as pd
 import os, sys
 import csv
 import datetime
-
+"""
 def get_openalex(DOI):
 
     openalex_api = 'https://api.openalex.org/'
@@ -21,6 +21,43 @@ def get_openalex(DOI):
     else:
         json_openalex = None
     
+    return (json_openalex, response_openalex.status_code)
+"""
+def get_openalex(DOI, max_retries=5):
+    
+    url = 'https://api.openalex.org/works/https://doi.org/'+DOI
+    
+    for attempt in range(max_retries):
+        try:
+            response = requests.get(url, headers={'Accept': 'application/json', 'User-Agent': 'mailto:r.dam@vu.nl'}, timeout=30)
+            print (response.status_code)
+            if response.status_code == 200:
+                json_openalex = response_openalex.json()        
+                return (json_openalex, response_openalex.status_code)
+
+            if response.status_code == 429:
+                # Rate limited - wait longer
+                wait_time = 2 ** attempt
+                time.sleep(wait_time)
+                continue
+
+            if response.status_code >= 500:
+                # Server error - retry
+                wait_time = 2 ** attempt
+                time.sleep(wait_time)
+                continue
+
+            # Client error - don't retry
+            response.raise_for_status()
+
+        except requests.exceptions.Timeout:
+            if attempt < max_retries - 1:
+                time.sleep(2 ** attempt)
+            else:
+                raise
+
+    raise Exception(f"Failed after {max_retries} retries")
+    json_openalex = None
     return (json_openalex, response_openalex.status_code)
 
 class getOpenalex():
@@ -224,7 +261,7 @@ class getOpenalex():
         return loc_land, loc_pdf, loc_oa, loc_license, loc_version
     
 
-"""
+
 #try it out
 from download_pdf import *
 file_dir = sys.path[0]
@@ -256,4 +293,3 @@ for n, DOI in enumerate(DOI_list[0:]):
 
     df_openalex.loc[len(df_openalex.index)] = [openalex.id, openalex.doi, openalex.pub_year, openalex.pub_date, openalex.pub_month, openalex.pub_day, openalex.main_title, openalex.sub_title, openalex.vu_pub, openalex.oa_status, openalex.prim_loc_landing, openalex.prim_loc_pdf, pdf_status, openalex.prim_loc_is_oa, openalex.prim_loc_in_doaj, openalex.prim_loc_license, openalex.prim_loc_version, openalex.green_url_landing, openalex.green_url_license, openalex.vor_pdf_url, openalex.vor_pdf_license, openalex.pmc_loc_landing, openalex.pmc_loc_pdf, openalex.pmc_loc_is_oa, openalex.pmc_loc_license, openalex.pmc_loc_version, openalex.journal, openalex.issn, openalex.volume, openalex.issue, openalex.first_page, openalex.last_page]
     df_openalex.to_csv(os.path.join(file_dir, path_session, "openalex_data.csv"), encoding='utf-8', index = False)
-"""
